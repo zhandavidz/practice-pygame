@@ -20,7 +20,7 @@ width = 64
 height = 64
 x = 50
 y = screen_height - height
-vel = 5
+vel = 10
 
 isJump = False
 jumpCount = 10
@@ -71,7 +71,7 @@ while run:
         walkCount = 0
 
     if not isJump:
-        if keys[pygame.K_SPACE]:
+        if keys[pygame.K_UP]:
             isJump = True
             right = False
             left = False
