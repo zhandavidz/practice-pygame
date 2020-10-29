@@ -16,38 +16,62 @@ char = pygame.image.load('img/standing.png')
 
 clock = pygame.time.Clock()
 
-width = 64
-height = 64
-x = 50
-y = screen_height - height
-vel = 10
+class player(object):
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.vel = 15
+        self.isJump = False
+        self.jumpCount = 10
+        self.left = False
+        self.right = False
+        self.walkCount = 0
+        self.standing = True
 
-isJump = False
-jumpCount = 10
+    def draw(self, win):
+        if self.walkCount + 1 >= 27:
+            self.walkCount = 0
 
-left = False
-right = False
-walkCount = 0
+        if not self.standing:
+            if self.left:
+                win.blit(walkLeft[self.walkCount//3], (self.x,self.y))
+                self.walkCount += 1
+            elif self.right:
+                win.blit(walkRight[self.walkCount//3], (self.x,self.y))
+                self.walkCount += 1
+        else:
+            if self.right:
+                win.blit(walkRight[0], (self.x, self.y))
+            else:
+                win.blit(walkLeft[0], (self.x, self.y))
+
+class projectile(object):
+    def __init__(self, x, y, radius, color, facing):
+        self.x = x
+        self.y = y
+        self.radius = radius
+        self.color = color
+        self.facing = facing
+        self.vel = 20 * facing
+
+    def draw(self, win):
+        pygame.draw.circle(win, self.color, (self.x, self.y), self.radius)
+
 
 def redrawGameWindow():
-    global walkCount
-
     win.blit(bg, (0,0))
 
-    if walkCount + 1 >= 27:
-        walkCount = 0
+    man.draw(win)
+    for bullet in bullets:
+        bullet.draw(win)
 
-    if left:
-        win.blit(walkLeft[walkCount//3], (x,y))
-        walkCount += 1
-    elif right:
-        win.blit(walkRight[walkCount//3], (x,y))
-        walkCount += 1
-    else:
-        win.blit(char, (x,y))
     pygame.display.update()
 
-
+# main loop
+man = player(50, 416, 64, 64)
+bullets = []
 run = True
 while run:
     clock.tick(27)
@@ -56,36 +80,50 @@ while run:
         if event.type == pygame.QUIT:
             run = False
 
+    for bullet in bullets:
+        if bullet.x < 500 and bullet.x > 0:
+            bullet.x += bullet.vel
+        else:
+            bullets.pop(bullets.index(bullet))
 
     keys = pygame.key.get_pressed()
 
-    left = False
-    right = False
-    if keys[pygame.K_LEFT] and x > 0:
-        x -= vel
-        left = True
-    elif keys[pygame.K_RIGHT] and x < screen_width - width:
-        x += vel
-        right = True
-    else:
-        walkCount = 0
+    if keys[pygame.K_SPACE]:
+        facing = -1
+        if man.right:
+            facing = 1
+        bullets.append(projectile(man.x + man.width // 2, man.y + man.height // 2, 6, (0,0,0), facing))
 
-    if not isJump:
-        if keys[pygame.K_UP]:
-            isJump = True
-            right = False
-            left = False
-            walkCount = 0
+    if keys[pygame.K_LEFT] and man.x > 0:
+        man.x -= man.vel
+        man.left = True
+        man.right = False
+        man.standing = False
+    elif keys[pygame.K_RIGHT] and man.x < screen_width - man.width:
+        man.x += man.vel
+        man.right = True
+        man.left = False
+        man.standing = False
     else:
-        if jumpCount >= -10:
+        man.walkCount = 0
+        man.standing = True
+
+    if not man.isJump:
+        if keys[pygame.K_UP]:
+            man.isJump = True
+            # man.right = False
+            # man.left = False
+            man.walkCount = 0
+    else:
+        if man.jumpCount >= -10:
             neg = 1
-            if jumpCount < 0:
+            if man.jumpCount < 0:
                 neg = -1
-            y -= (jumpCount ** 2) * .5 * neg
-            jumpCount -= 1
+            man.y -= round((man.jumpCount ** 2) * .5 * neg)
+            man.jumpCount -= 1
         else:
-            isJump = False
-            jumpCount = 10
+            man.isJump = False
+            man.jumpCount = 10
 
     redrawGameWindow()
 
